@@ -1,8 +1,12 @@
 package read_write
 
 import (
+	"bufio"
 	"errors"
 	"flag"
+	"fmt"
+	"io"
+	"os"
 )
 
 type Flags struct {
@@ -36,4 +40,63 @@ func GetFlags() (Flags, string, string, error) {
 	fNameOut := flag.Arg(1)
 
 	return flags, fNameIn, fNameOut, nil
+}
+
+func ReadFile(fname string) ([]string, error) {
+	if fname == "" {
+		return []string{}, errors.New("Error: empty file")
+	}
+
+	var fileData []string
+	f, err := os.Open(fname)
+	if err != nil {
+		return fileData, err
+	}
+
+	defer func(f *os.File) {
+		err := f.Close()
+		if err != nil {
+			fmt.Printf("error open file %s", f.Name())
+		}
+	}(f)
+
+	buf := bufio.NewScanner(f)
+	var lines []string
+
+	for buf.Scan() {
+		lines = append(lines, buf.Text())
+	}
+	return lines, buf.Err()
+
+}
+func WriteFile(data []string, fname string) error {
+	var out io.Writer
+
+	if fname != "" {
+		f, err := os.Create(fname)
+		if err != nil {
+			return err
+		}
+
+		defer func(f *os.File) {
+			err := f.Close()
+			if err != nil {
+				fmt.Printf("error write file %s\n", f.Name())
+			}
+		}(f)
+
+		out = f
+	} else {
+		out = os.Stdout
+	}
+
+	writer := bufio.NewWriter(out)
+
+	for _, str := range data {
+		_, err := writer.WriteString(str + "\n")
+		if err != nil {
+			return errors.New("write to file error")
+		}
+	}
+	return writer.Flush()
 }

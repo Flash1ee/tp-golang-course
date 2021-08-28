@@ -32,25 +32,21 @@ func GetFlags() (Flags, string, string, error) {
 
 	fNameIn := ""
 
-	if fNameIn = flag.Arg(0); fNameIn == "" {
-		err := errors.New("Error: The input file must be specified")
-		return Flags{}, "", "", err
-	}
-
-	fNameOut := flag.Arg(1)
+	fNameIn, fNameOut := flag.Arg(0), flag.Arg(1)
 
 	return flags, fNameIn, fNameOut, nil
 }
 
 func ReadFile(fname string) ([]string, error) {
-	if fname == "" {
-		return []string{}, errors.New("Error: empty file")
-	}
-
 	var fileData []string
 	f, err := os.Open(fname)
+
 	if err != nil {
-		return fileData, err
+		if fname == "" {
+			f = os.Stdin
+		} else {
+			return fileData, err
+		}
 	}
 
 	defer func(f *os.File) {

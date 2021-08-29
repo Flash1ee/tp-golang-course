@@ -9,32 +9,64 @@ import (
 	"os"
 )
 
+type Errors struct {
+	TogetherArgs error
+	SkipNegative error
+}
+
+func (e *Errors) init() {
+	e.TogetherArgs = errors.New("Flags [-c -d -u] cannot be used together")
+	e.SkipNegative = errors.New("Count of skipped symbols(words) must be a positive number")
+}
+
 type Flags struct {
 	CntF          bool
 	RepeatF       bool
 	NotRepeatF    bool
-	CntSkipF      int
+	CntSkipWordsF int
+	CntSkipCharsF int
 	RegisterSkipF bool
+	FNameIn       string
+	FNameOut      string
 }
 
-func GetFlags() (Flags, string, string, error) {
+func B2i(b bool) int8 {
+	if b {
+		return 1
+	}
+	return 0
+}
 
-	flags := Flags{}
+func GetFlags(progName string, args []string) (Flags, error) {
 
-	flag.BoolVar(&flags.CntF, "c", false, "prefix lines by the number of occurrences")
-	flag.BoolVar(&flags.RepeatF, "d", false, "only print duplicate lines, one for each group")
-	flag.BoolVar(&flags.NotRepeatF, "u", false, "only print unique lines")
-	flag.IntVar(&flags.CntSkipF, "f", 0, "avoid comparing the first N fields")
-	flag.IntVar(&flags.CntSkipF, "s", 0, "avoid comparing the first N characters")
-	flag.BoolVar(&flags.RegisterSkipF, "i", false, "ignore differences in case when comparing")
+	confFlags := Flags{}
+	flags := flag.NewFlagSet(progName, flag.ContinueOnError)
+	myErrors := Errors{}
+	myErrors.init()
 
-	flag.Parse()
+	flags.BoolVar(&confFlags.CntF, "c", false, "prefix lines by the number of occurrences")
+	flags.BoolVar(&confFlags.RepeatF, "d", false, "only print duplicate lines, one for each group")
+	flags.BoolVar(&confFlags.NotRepeatF, "u", false, "only print unique lines")
+	flags.IntVar(&confFlags.CntSkipWordsF, "f", 0, "avoid comparing the first N fields")
+	flags.IntVar(&confFlags.CntSkipCharsF, "s", 0, "avoid comparing the first N characters")
+	flags.BoolVar(&confFlags.RegisterSkipF, "i", false, "ignore differences in case when comparing")
 
-	fNameIn := ""
+	err := flags.Parse(args)
+	if err != nil {
+		return Flags{}, err
+	}
+	if confFlags.CntSkipCharsF < 0 || confFlags.CntSkipWordsF < 0 {
+		return Flags{}, myErrors.SkipNegative
+	}
 
-	fNameIn, fNameOut := flag.Arg(0), flag.Arg(1)
+	tmp := B2i(confFlags.CntF) + B2i(confFlags.NotRepeatF) + B2i(confFlags.RepeatF)
+	if tmp != 0 && tmp != 1 {
+		return Flags{}, myErrors.TogetherArgs
+	}
 
-	return flags, fNameIn, fNameOut, nil
+	confFlags.FNameIn, confFlags.FNameOut = flags.Arg(0), flags.Arg(1)
+
+	return confFlags, nil
 }
 
 func ReadFile(fname string) ([]string, error) {

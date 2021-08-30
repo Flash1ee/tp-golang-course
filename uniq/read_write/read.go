@@ -18,7 +18,7 @@ type Errors struct {
 }
 
 func (e *Errors) init() {
-	e.UnknownFlag = errors.New("Нou are using an unknown flag.\n" +
+	e.UnknownFlag = errors.New("You are using an unknown flag.\n" +
 		"Run the program with the --help flag to output the supported commands")
 	e.TogetherArgs = errors.New("Flags [-c -d -u] cannot be used together")
 	e.SkipNegative = errors.New("Count of skipped symbols(words) must be a positive number")
@@ -62,20 +62,18 @@ func GetFlags(progName string, args []string) (Flags, string, error) {
 
 	err := flags.Parse(args)
 	if err != nil {
-		return Flags{}, output.String(), err
+		return Flags{}, output.String(), UnknownFlagError
 	}
 	if confFlags.CntSkipCharsF < 0 || confFlags.CntSkipWordsF < 0 {
-		return Flags{}, output.String(), myErrors.SkipNegative
+		return Flags{}, output.String(), SkipNegative
 	}
 
 	tmp := B2i(confFlags.CntF) + B2i(confFlags.NotRepeatF) + B2i(confFlags.RepeatF)
 	if tmp != 0 && tmp != 1 {
-		return Flags{}, output.String(), myErrors.TogetherArgs
+		return Flags{}, output.String(), TogetherArgs
 	}
-	x := flags.NArg()
-	fmt.Println(x)
 	if flags.NArg() > 2 {
-		return Flags{}, output.String(), errors.New("err")
+		return Flags{}, output.String(), IncorrectPosition
 	}
 
 	confFlags.FNameIn, confFlags.FNameOut = flags.Arg(0), flags.Arg(1)

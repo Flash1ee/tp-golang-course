@@ -9,9 +9,13 @@ import (
 
 func main() {
 
-	flags, err := read_write.GetFlags(os.Args[0], os.Args[1:])
-	if err != nil {
-		fmt.Println(err)
+	flags, output, err := read_write.GetFlags(os.Args[0], os.Args[1:])
+	if err == flag.ErrHelp {
+		fmt.Println(output)
+		os.Exit(2)
+	} else if err != nil {
+		fmt.Println("got error:", err)
+		fmt.Println("output:\n", output)
 		flag.CommandLine.PrintDefaults()
 		os.Exit(1)
 	}

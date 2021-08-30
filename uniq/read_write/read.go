@@ -2,6 +2,7 @@ package read_write
 
 import (
 	"bufio"
+	"bytes"
 	"errors"
 	"flag"
 	"fmt"
@@ -10,11 +11,15 @@ import (
 )
 
 type Errors struct {
-	TogetherArgs error
-	SkipNegative error
+	UnknownFlag       error
+	TogetherArgs      error
+	SkipNegative      error
+	IncorrectPosition error
 }
 
 func (e *Errors) init() {
+	e.UnknownFlag = errors.New("Нou are using an unknown flag.\n" +
+		"Run the program with the --help flag to output the supported commands")
 	e.TogetherArgs = errors.New("Flags [-c -d -u] cannot be used together")
 	e.SkipNegative = errors.New("Count of skipped symbols(words) must be a positive number")
 }
@@ -37,10 +42,14 @@ func B2i(b bool) int8 {
 	return 0
 }
 
-func GetFlags(progName string, args []string) (Flags, error) {
+func GetFlags(progName string, args []string) (Flags, string, error) {
 
+	var output bytes.Buffer
 	confFlags := Flags{}
+
 	flags := flag.NewFlagSet(progName, flag.ContinueOnError)
+	flags.SetOutput(&output)
+
 	myErrors := Errors{}
 	myErrors.init()
 
@@ -53,20 +62,25 @@ func GetFlags(progName string, args []string) (Flags, error) {
 
 	err := flags.Parse(args)
 	if err != nil {
-		return Flags{}, err
+		return Flags{}, output.String(), err
 	}
 	if confFlags.CntSkipCharsF < 0 || confFlags.CntSkipWordsF < 0 {
-		return Flags{}, myErrors.SkipNegative
+		return Flags{}, output.String(), myErrors.SkipNegative
 	}
 
 	tmp := B2i(confFlags.CntF) + B2i(confFlags.NotRepeatF) + B2i(confFlags.RepeatF)
 	if tmp != 0 && tmp != 1 {
-		return Flags{}, myErrors.TogetherArgs
+		return Flags{}, output.String(), myErrors.TogetherArgs
+	}
+	x := flags.NArg()
+	fmt.Println(x)
+	if flags.NArg() > 2 {
+		return Flags{}, output.String(), errors.New("err")
 	}
 
 	confFlags.FNameIn, confFlags.FNameOut = flags.Arg(0), flags.Arg(1)
 
-	return confFlags, nil
+	return confFlags, output.String(), nil
 }
 
 func ReadFile(fname string) ([]string, error) {

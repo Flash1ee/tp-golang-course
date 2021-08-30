@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 	"uniq/read_write"
+	"uniq/uniq"
 )
 
 func main() {
@@ -24,13 +25,15 @@ func main() {
 		fmt.Println(err)
 		os.Exit(1)
 	}
-	err = read_write.WriteFile(data, flags.FNameOut)
+	res, err := uniq.Uniq(data, flags)
+
+	err = read_write.WriteFile(res, flags.FNameOut)
 	if err != nil {
 		fmt.Println(err)
 		os.Exit(1)
 	}
 
-	fmt.Println("flags", flags)
+	//fmt.Println("flags", flags)
 
 	os.Exit(0)
 }

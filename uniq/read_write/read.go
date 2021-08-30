@@ -121,5 +121,6 @@ func WriteFile(data []string, fname string) error {
 			return errors.New("write to file error")
 		}
 	}
+	fmt.Println("otbivochka")
 	return writer.Flush()
 }

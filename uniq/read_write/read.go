@@ -10,20 +10,6 @@ import (
 	"os"
 )
 
-type Errors struct {
-	UnknownFlag       error
-	TogetherArgs      error
-	SkipNegative      error
-	IncorrectPosition error
-}
-
-func (e *Errors) init() {
-	e.UnknownFlag = errors.New("You are using an unknown flag.\n" +
-		"Run the program with the --help flag to output the supported commands")
-	e.TogetherArgs = errors.New("Flags [-c -d -u] cannot be used together")
-	e.SkipNegative = errors.New("Count of skipped symbols(words) must be a positive number")
-}
-
 type Flags struct {
 	CntF          bool
 	RepeatF       bool
@@ -49,9 +35,6 @@ func GetFlags(progName string, args []string) (Flags, string, error) {
 
 	flags := flag.NewFlagSet(progName, flag.ContinueOnError)
 	flags.SetOutput(&output)
-
-	myErrors := Errors{}
-	myErrors.init()
 
 	flags.BoolVar(&confFlags.CntF, "c", false, "prefix lines by the number of occurrences")
 	flags.BoolVar(&confFlags.RepeatF, "d", false, "only print duplicate lines, one for each group")

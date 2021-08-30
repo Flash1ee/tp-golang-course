@@ -38,6 +38,7 @@ func TestGetFlagsNegative(t *testing.T) {
 	}{
 		{[]string{"-k"}, Flags{false, false, false, 0, 0, false, "", ""}, UnknownFlagError.Error()},
 		{[]string{"-d", "-u", "-c"}, Flags{false, false, false, 0, 0, false, "", ""}, TogetherArgs.Error()},
+		{[]string{"-c", "-f", "-10"}, Flags{false, false, false, 0, 0, false, "", ""}, SkipNegative.Error()},
 		{[]string{"in.txt", "-c", "-s", "10"}, Flags{false, false, false, 0, 0, false, "", ""}, IncorrectPosition.Error()},
 		{[]string{"-c", "in.txt", "-s", "10"}, Flags{false, false, false, 0, 0, false, "", ""}, IncorrectPosition.Error()},
 	}

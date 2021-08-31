@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"strconv"
 )
 
 type Flags struct {
@@ -19,6 +20,55 @@ type Flags struct {
 	RegisterSkipF bool
 	FNameIn       string
 	FNameOut      string
+}
+
+type UniqRes struct {
+	Str string
+	Cnt int
+}
+
+func (u UniqRes) WriteRepeatStr(writer *bufio.Writer) error {
+	var err error
+
+	if u.Cnt > 1 {
+		_, err = writer.WriteString(u.Str + "\n")
+	}
+
+	if err != nil {
+		return errors.New("write to file error")
+	}
+	return nil
+}
+func (u UniqRes) WriteNotRepeatStr(writer *bufio.Writer) error {
+	var err error
+
+	if u.Cnt == 1 {
+		_, err = writer.WriteString(u.Str + "\n")
+	}
+
+	if err != nil {
+		return errors.New("write to file error")
+	}
+	return nil
+}
+func (u UniqRes) WriteWithCntStr(writer *bufio.Writer) error {
+	var err error
+
+	_, err = writer.WriteString(strconv.Itoa(u.Cnt) + "\t" + u.Str + "\n")
+
+	if err != nil {
+		return errors.New("write to file error")
+	}
+	return nil
+}
+
+func (u UniqRes) WriteDefault(writer *bufio.Writer) error {
+	var err error
+	_, err = writer.WriteString(u.Str + "\n")
+	if err != nil {
+		return errors.New("write to file error")
+	}
+	return nil
 }
 
 func B2i(b bool) int8 {
@@ -92,11 +142,12 @@ func ReadFile(fname string) ([]string, error) {
 	return lines, buf.Err()
 
 }
-func WriteFile(data []string, fname string) error {
+func WriteFile(cnts []UniqRes, flags Flags) error {
 	var out io.Writer
+	var err error
 
-	if fname != "" {
-		f, err := os.Create(fname)
+	if flags.FNameOut != "" {
+		f, err := os.Create(flags.FNameOut)
 		if err != nil {
 			return err
 		}
@@ -115,8 +166,23 @@ func WriteFile(data []string, fname string) error {
 
 	writer := bufio.NewWriter(out)
 
-	for _, str := range data {
-		_, err := writer.WriteString(str + "\n")
+	for _, val := range cnts {
+		if flags.CntF {
+			err = val.WriteWithCntStr(writer)
+		} else if flags.RepeatF {
+			err = val.WriteRepeatStr(writer)
+		} else if flags.NotRepeatF {
+			err = val.WriteNotRepeatStr(writer)
+		} else {
+			err = val.WriteDefault(writer)
+		}
+		//toWrite := ""
+		//if flags.CntF {
+		//	toWrite = strconv.Itoa(val.Cnt) + "\t" + val.Str + "\n"
+		//} else {
+		//	toWrite = val.Str + "\n"
+		//}
+		//_, err := writer.WriteString(toWrite)
 		if err != nil {
 			return errors.New("write to file error")
 		}

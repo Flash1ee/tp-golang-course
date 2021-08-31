@@ -27,7 +27,7 @@ func main() {
 	}
 	res, err := uniq.Uniq(data, flags)
 
-	err = read_write.WriteFile(res, flags.FNameOut)
+	err = read_write.WriteFile(res, flags)
 	if err != nil {
 		fmt.Println(err)
 		os.Exit(1)

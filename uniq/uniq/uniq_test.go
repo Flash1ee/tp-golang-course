@@ -7,7 +7,7 @@ import (
 	"uniq/read_write"
 )
 
-func TestGetCountStringsPositive(t *testing.T) {
+func TestGetUniqStringsPositive(t *testing.T) {
 	var tests = []struct {
 		data     []string
 		flags    read_write.Flags
@@ -46,7 +46,7 @@ func TestGetCountStringsPositive(t *testing.T) {
 	}
 	for _, pair := range tests {
 		t.Run(strings.Join(pair.data, "\n"), func(t *testing.T) {
-			res, err := GetCountStrings(pair.data, pair.flags)
+			res, err := GetUniqStrings(pair.data, pair.flags)
 			assert.Equal(t, pair.expected, res)
 			assert.Nil(t, err)
 		})

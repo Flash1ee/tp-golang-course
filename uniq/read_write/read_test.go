@@ -12,7 +12,7 @@ func TestGetFlagsPositive(t *testing.T) {
 		args []string
 		conf Flags
 	}{
-		{[]string{}, Flags{false, false, false, 0, 0, false, "", ""}},
+		{[]string{}, Flags{}},
 		{[]string{"-c"}, Flags{true, false, false, 0, 0, false, "", ""}},
 		{[]string{"-f", "10"}, Flags{false, false, false, 10, 0, false, "", ""}},
 		{[]string{"-u"}, Flags{false, false, true, 0, 0, false, "", ""}},
@@ -36,11 +36,11 @@ func TestGetFlagsNegative(t *testing.T) {
 		conf   Flags
 		errstr string
 	}{
-		{[]string{"-k"}, Flags{false, false, false, 0, 0, false, "", ""}, UnknownFlagError.Error()},
-		{[]string{"-d", "-u", "-c"}, Flags{false, false, false, 0, 0, false, "", ""}, TogetherArgs.Error()},
-		{[]string{"-c", "-f", "-10"}, Flags{false, false, false, 0, 0, false, "", ""}, SkipNegative.Error()},
-		{[]string{"in.txt", "-c", "-s", "10"}, Flags{false, false, false, 0, 0, false, "", ""}, IncorrectPosition.Error()},
-		{[]string{"-c", "in.txt", "-s", "10"}, Flags{false, false, false, 0, 0, false, "", ""}, IncorrectPosition.Error()},
+		{[]string{"-k"}, Flags{}, UnknownFlagError.Error()},
+		{[]string{"-d", "-u", "-c"}, Flags{}, TogetherArgs.Error()},
+		{[]string{"-c", "-f", "-10"}, Flags{}, SkipNegative.Error()},
+		{[]string{"in.txt", "-c", "-s", "10"}, Flags{}, IncorrectPosition.Error()},
+		{[]string{"-c", "in.txt", "-s", "10"}, Flags{}, IncorrectPosition.Error()},
 	}
 
 	for _, pair := range tests {

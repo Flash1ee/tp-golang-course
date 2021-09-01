@@ -5,8 +5,11 @@ import (
 	"uniq/read_write"
 )
 
-func getCountStrings(src []string, flags read_write.Flags) ([]read_write.UniqRes, error) {
+func GetCountStrings(src []string, flags read_write.Flags) ([]read_write.UniqRes, error) {
 	cnts := make([]read_write.UniqRes, 0)
+	if len(src) == 0 {
+		return []read_write.UniqRes{}, nil
+	}
 	for idx, val := range src {
 		var cur string
 		var prev string
@@ -24,11 +27,6 @@ func getCountStrings(src []string, flags read_write.Flags) ([]read_write.UniqRes
 			cnts[len(cnts)-1].Cnt += 1
 		}
 	}
-	//if idx == 0 || src[idx - 1] != val {
-	//	cnts = append(cnts, read_write.UniqRes{Str: val, Cnt: 1})
-	//} else {
-	//}
-	//}
 	return cnts, nil
 }
 func Uniq(data []string, flags read_write.Flags) ([]read_write.UniqRes, error) {
@@ -48,7 +46,7 @@ func Uniq(data []string, flags read_write.Flags) ([]read_write.UniqRes, error) {
 	//}
 	res := make([]read_write.UniqRes, 0)
 
-	res, err = getCountStrings(data, flags)
+	res, err = GetCountStrings(data, flags)
 
 	return res, err
 

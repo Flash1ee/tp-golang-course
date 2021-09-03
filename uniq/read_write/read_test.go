@@ -2,6 +2,8 @@ package read_write
 
 import (
 	"github.com/stretchr/testify/assert"
+	"io/ioutil"
+	"log"
 	"os"
 	"strings"
 	"testing"
@@ -49,6 +51,87 @@ func TestGetFlagsNegative(t *testing.T) {
 			assert.Equal(t, pair.conf, res, "conf got %+v, want %+v", pair.conf, res)
 			assert.Equal(t, pair.errstr, err.Error())
 			assert.NotNil(t, err, "err got %v, want nil", err)
+		})
+	}
+}
+
+func TestReadFilePositive(t *testing.T) {
+	var tests = []struct {
+		fName    string
+		data     string
+		expected []string
+	}{
+		{data: "Hello\nWorld\n", expected: []string{"Hello", "World"}},
+		{data: ""},
+		{fName: "test.txt", data: "Lorem\nIpsum\n", expected: []string{"Lorem", "Ipsum"}},
+	}
+	for _, pair := range tests {
+		t.Run(pair.data, func(t *testing.T) {
+			fname := pair.fName
+			tempFile, err := ioutil.TempFile("", fname)
+			if err != nil {
+				log.Fatal(err)
+			}
+			defer func(name string) {
+				err := os.Remove(name)
+				if err != nil {
+					log.Fatal(err)
+				}
+			}(tempFile.Name())
+			if _, err = tempFile.Write([]byte(pair.data)); err != nil {
+				log.Fatal(err)
+			}
+
+			if _, err := tempFile.Seek(0, 0); err != nil {
+				log.Fatal(err)
+			}
+
+			oldStdin := os.Stdin
+
+			defer func() {
+				os.Stdin = oldStdin
+			}()
+
+			os.Stdin = tempFile
+			if fname != "" {
+				fname = tempFile.Name()
+			}
+
+			res, err := ReadFile(fname)
+			assert.Equal(t, pair.expected, res)
+			assert.Nil(t, err)
+		})
+	}
+}
+func TestReadFileNegative(t *testing.T) {
+	var tests = []struct {
+		fName    string
+		data     string
+		expected []string
+	}{
+		{fName: "test.txt", data: "Hello\nWorld\n", expected: nil},
+	}
+	for _, pair := range tests {
+		t.Run(pair.data, func(t *testing.T) {
+			tempFile, err := ioutil.TempFile("", "")
+			if err != nil {
+				log.Fatal(err)
+			}
+			defer func(name string) {
+				err := os.Remove(name)
+				if err != nil {
+					log.Fatal(err)
+				}
+			}(tempFile.Name())
+
+			err = os.Chmod(tempFile.Name(), 0)
+			if err != nil {
+				log.Fatal(err)
+			}
+
+			res, err := ReadFile(tempFile.Name())
+			assert.Equal(t, pair.expected, res)
+			assert.NotNil(t, err)
 		})
 	}
 }

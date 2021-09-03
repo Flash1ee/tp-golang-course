@@ -176,17 +176,9 @@ func WriteFile(cnts []UniqRes, flags Flags) error {
 		} else {
 			err = val.WriteDefault(writer)
 		}
-		//toWrite := ""
-		//if flags.CntF {
-		//	toWrite = strconv.Itoa(val.Cnt) + "\t" + val.Str + "\n"
-		//} else {
-		//	toWrite = val.Str + "\n"
-		//}
-		//_, err := writer.WriteString(toWrite)
 		if err != nil {
 			return errors.New("write to file error")
 		}
 	}
-	fmt.Println("otbivochka")
 	return writer.Flush()
 }

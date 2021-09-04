@@ -232,3 +232,40 @@ func TestSkipCharsNegative(t *testing.T) {
 		})
 	}
 }
+func TestUniq(t *testing.T) {
+	var tests = []struct {
+		data     []string
+		flags    read_write.Flags
+		expected []read_write.UniqRes
+	}{
+		{
+			data: []string{
+				"I love music.",
+				"I love music.",
+				"I love music.",
+				" ",
+				"I love music of Kartik.",
+				"I love music of Kartik.",
+				"Thanks.",
+				"I love music of Kartik.",
+				"I love music of Kartik.",
+			},
+			flags: read_write.Flags{},
+			expected: []read_write.UniqRes{
+				{Str: "I love music.", Cnt: 3}, {Str: " ", Cnt: 1},
+				{Str: "I love music of Kartik.", Cnt: 2}, {Str: "Thanks.", Cnt: 1},
+				{Str: "I love music of Kartik.", Cnt: 2},
+			},
+		},
+		{
+			expected: []read_write.UniqRes{},
+		},
+	}
+	for _, pair := range tests {
+		t.Run(strings.Join(pair.data, " "), func(t *testing.T) {
+			res, err := Uniq(pair.data, pair.flags)
+			assert.Equal(t, pair.expected, res)
+			assert.Nil(t, err)
+		})
+	}
+}

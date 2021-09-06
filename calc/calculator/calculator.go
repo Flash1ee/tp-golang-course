@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"strconv"
+	"strings"
 )
 
 func Contains(a []string, x string) bool {
@@ -61,6 +62,7 @@ func GetTokens(data string) ([]string, error) {
 	var curNum string
 
 	validTokens := []string{"(", ")", "-", "+", "/", "*"}
+
 	for _, val := range data {
 		cur := string(val)
 		if cur != " " {
@@ -72,7 +74,7 @@ func GetTokens(data string) ([]string, error) {
 				}
 				res = append(res, cur)
 			} else {
-				_, err := strconv.Atoi(cur)
+				_, err := strconv.ParseFloat(cur, 64)
 				if err == nil {
 					curNum += cur
 					if !flagNum {
@@ -91,9 +93,9 @@ func GetTokens(data string) ([]string, error) {
 	return res, nil
 
 }
-func InfixToPostfix(tokens []string) []string {
+func InfixToPostfix(tokens []string) ([]string, error) {
 	if len(tokens) == 0 {
-		return []string{}
+		return []string{}, nil
 	}
 	priority := map[string]int{
 		"+": 2,
@@ -115,83 +117,68 @@ func InfixToPostfix(tokens []string) []string {
 		} else if token == ")" {
 			for cur := stack.Pop().(string); cur != "("; cur = stack.Pop().(string) {
 				res = append(res, cur)
-
 			}
-		} else if token == "+" || token == "-" || token == "/" || token == "*" {
+		} else if isOperation(token) {
 			for !stack.isEmpty() && priority[stack.Peek().(string)] >= priority[token] {
 				res = append(res, stack.Pop().(string))
 			}
 			stack.Push(token)
-		} else {
+		} else if _, ok := strconv.ParseFloat(token, 64); ok == nil {
 			res = append(res, token)
+		} else {
+			return nil, errors.New(fmt.Sprintf("Incorrect sequence token %s in expression %s",
+				token, strings.Join(tokens, "")))
 		}
 	}
 
-	return res
+	return res, nil
 }
+func isOperation(token string) bool {
+	validOperations := []string{
+		"+",
+		"-",
+		"/",
+		"*",
+		"(",
+	}
+	return Contains(validOperations, token)
+}
+func Calculate(tokens []string) (float64, error) {
+	if len(tokens) == 0 {
+		return 0, nil
+	}
+	actions := map[string]func(a float64, b float64) float64{
+		"+": func(a float64, b float64) float64 {
+			return a + b
+		},
+		"-": func(a float64, b float64) float64 {
+			return a - b
+		},
+		"/": func(a float64, b float64) float64 {
+			return a / b
+		},
+		"*": func(a float64, b float64) float64 {
+			return a * b
+		},
+	}
+	stack := NewStack()
 
-//func Calculate(tokens []string) (int, error) {
-//	if len(tokens) == 0 {
-//		return 0, nil
-//	}
-//	actions := map[string]func(a int, b int) int{
-//		"+": func(a int, b int) int {
-//			return a + b
-//		},
-//		"-": func(a int, b int) int {
-//			return a - b
-//		},
-//		"/": func(a int, b int) int {
-//			return a / b
-//		},
-//		"*": func(a int, b int) int {
-//			return a * b
-//		},
-//	}
-//	stack := NewStack()
-//	res := 0
-//
-//	for _, cur := range tokens {
-//
-//		if val, err := strconv.Atoi(cur); err == nil {
-//			operands.Push(val)
-//
-//		} else if _, exist := priority[cur]; exist {
-//			last := fmt.Sprintf("%s", operations.Peek())
-//
-//			if operations.isEmpty() {
-//				operations.Push(cur)
-//			} else if last != "(" && last != ")" {
-//				if priority[last] < priority[cur] {
-//					operations.Push(cur)
-//				} else {
-//					for priority[last] >= priority[cur] && last != "(" && last != ")" {
-//
-//						a := operands.Pop()
-//						b := operands.Pop()
-//						if a == nil || b == nil {
-//							return -1, errors.New(fmt.Sprintf("Incorrect calculate string %s", tokens))
-//						}
-//						first, second := a.(int), b.(int)
-//						operands.Push(actions[cur](first, second))
-//						operations.Pop()
-//						if !operations.isEmpty() {
-//							last = operations.Peek().(string)
-//						}
-//					}
-//
-//				}
-//			}
-//		} else if cur == "(" {
-//			operations.Push(cur)
-//
-//		} else if cur == ")" {
-//
-//		} else {
-//			return -1, errors.New(fmt.Sprintf("Incorrect token %s", cur))
-//		}
-//	}
-//
-//	return res, nil
-//
-//}
+	for _, token := range tokens {
+		if val, err := strconv.ParseFloat(token, 64); err == nil {
+			stack.Push(val)
+
+		} else if isOperation(token) {
+			second, okSecond := stack.Pop().(float64)
+			first, okFirst := stack.Pop().(float64)
+			if !okSecond || !okFirst {
+				return -1, errors.New(fmt.Sprintf("Error sequence of tokens %s", tokens))
+			}
+			stack.Push(actions[token](first, second))
+		} else {
+			return -1, errors.New(fmt.Sprintf("Incorrect token %s", token))
+		}
+	}
+
+	return stack.Pop().(float64), nil
+
+}

@@ -62,7 +62,7 @@ func TestGetTokensNegative(t *testing.T) {
 		})
 	}
 }
-func TestInfixToPostfix(t *testing.T) {
+func TestInfixToPostfixPositive(t *testing.T) {
 	var tests = []struct {
 		tokens   []string
 		expected []string
@@ -76,8 +76,8 @@ func TestInfixToPostfix(t *testing.T) {
 			expected: []string{"110", "50", "+"},
 		},
 		{
-			tokens:   []string{"110", "+", "50", "+", "(", "4", "-", "2", "*", "5", ")", "-", "10", "+", "40"},
-			expected: []string{"110", "50", "+", "4", "2", "5", "*", "-", "+", "10", "-", "40", "+"},
+			tokens:   []string{"110", "+", "50", "+", "(", "4", "-", "2", "*", "5", ")", "-", "10", "/", "2"},
+			expected: []string{"110", "50", "+", "4", "2", "5", "*", "-", "+", "10", "2", "/", "-"},
 		},
 		{
 			tokens:   []string{"(", "1", "+", "2", ")", "-", "3"},
@@ -86,8 +86,81 @@ func TestInfixToPostfix(t *testing.T) {
 	}
 	for _, pair := range tests {
 		t.Run(strings.Join(pair.tokens, ""), func(t *testing.T) {
-			res := InfixToPostfix(pair.tokens)
+			res, err := InfixToPostfix(pair.tokens)
 			assert.Equal(t, pair.expected, res)
+			assert.Nil(t, err)
+		})
+	}
+}
+func TestInfixToPostfixNegative(t *testing.T) {
+	var tests = []struct {
+		tokens []string
+	}{
+		{
+			tokens: []string{"110", "ops", "50"},
+		},
+		{
+			tokens: []string{"bad string"},
+		},
+	}
+	for _, pair := range tests {
+		t.Run(strings.Join(pair.tokens, ""), func(t *testing.T) {
+			_, err := InfixToPostfix(pair.tokens)
+			assert.NotNil(t, err)
+		})
+	}
+}
+func TestCalculatePositive(t *testing.T) {
+	var tests = []struct {
+		postfixExpr []string
+		expected    float64
+	}{
+		{
+			postfixExpr: []string{},
+			expected:    0,
+		},
+		{
+			postfixExpr: []string{"110", "50", "+"},
+			expected:    160,
+		},
+		{
+			postfixExpr: []string{"110", "50", "+", "4", "2", "5", "*", "-", "+", "10", "2", "/", "-"},
+			expected:    149,
+		},
+		{
+			postfixExpr: []string{"1", "2", "+", "3", "-"},
+			expected:    0,
+		},
+		{
+			postfixExpr: []string{"110", "50", "+", "2", "4", "-", "*"},
+			expected:    -320,
+		},
+	}
+	for _, pair := range tests {
+		t.Run(strings.Join(pair.postfixExpr, ""), func(t *testing.T) {
+			res, err := Calculate(pair.postfixExpr)
+			assert.Equal(t, pair.expected, res)
+			assert.Nil(t, err)
+		})
+	}
+}
+
+func TestCalculateNegative(t *testing.T) {
+	var tests = []struct {
+		postfixExpr []string
+	}{
+		{
+			postfixExpr: []string{"bad tokens"},
+		},
+		{
+			postfixExpr: []string{"-", "-", "-"},
+		},
+	}
+	for _, pair := range tests {
+		t.Run(strings.Join(pair.postfixExpr, ""), func(t *testing.T) {
+			res, err := Calculate(pair.postfixExpr)
+			assert.Equal(t, -1., res)
+			assert.NotNil(t, err)
 		})
 	}
 }

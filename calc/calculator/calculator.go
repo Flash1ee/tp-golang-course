@@ -1,20 +1,10 @@
 package calculator
 
 import (
-	"errors"
 	"fmt"
 	"strconv"
 	"strings"
 )
-
-func Contains(a []string, x string) bool {
-	for _, n := range a {
-		if x == n {
-			return true
-		}
-	}
-	return false
-}
 
 type Node interface{}
 
@@ -57,16 +47,23 @@ func (s *Stack) isEmpty() bool {
 }
 
 func GetTokens(data string) ([]string, error) {
-	res := make([]string, 0, 0)
+	res := make([]string, 0)
 	var flagNum bool
 	var curNum string
 
-	validTokens := []string{"(", ")", "-", "+", "/", "*"}
+	validTokens := map[string]bool{
+		"(": true,
+		")": true,
+		"-": true,
+		"+": true,
+		"/": true,
+		"*": true,
+	}
 
 	for _, val := range data {
 		cur := string(val)
 		if cur != " " {
-			if Contains(validTokens, cur) {
+			if ok, _ := validTokens[cur]; ok {
 				if flagNum {
 					res = append(res, curNum)
 					flagNum = false
@@ -81,7 +78,7 @@ func GetTokens(data string) ([]string, error) {
 						flagNum = true
 					}
 				} else {
-					return nil, errors.New(fmt.Sprintf("Error parse string\nUndefined token %s", cur))
+					return nil, fmt.Errorf("error parse string\nUndefined token %s", cur)
 				}
 			}
 		}
@@ -104,6 +101,13 @@ func InfixToPostfix(tokens []string) ([]string, error) {
 		"*": 4,
 		"(": 1,
 	}
+	validOperations := map[string]bool{
+		"+": true,
+		"-": true,
+		"/": true,
+		"*": true,
+		"(": true,
+	}
 
 	stack := NewStack()
 	stack.Push("(")
@@ -118,7 +122,7 @@ func InfixToPostfix(tokens []string) ([]string, error) {
 			for cur := stack.Pop().(string); cur != "("; cur = stack.Pop().(string) {
 				res = append(res, cur)
 			}
-		} else if isOperation(token) {
+		} else if ok, _ := validOperations[token]; ok {
 			for !stack.isEmpty() && priority[stack.Peek().(string)] >= priority[token] {
 				res = append(res, stack.Pop().(string))
 			}
@@ -126,22 +130,12 @@ func InfixToPostfix(tokens []string) ([]string, error) {
 		} else if _, ok := strconv.ParseFloat(token, 64); ok == nil {
 			res = append(res, token)
 		} else {
-			return nil, errors.New(fmt.Sprintf("Incorrect sequence token %s in expression %s",
-				token, strings.Join(tokens, "")))
+			return nil, fmt.Errorf("incorrect sequence token %s in expression %s",
+				token, strings.Join(tokens, ""))
 		}
 	}
 
 	return res, nil
-}
-func isOperation(token string) bool {
-	validOperations := []string{
-		"+",
-		"-",
-		"/",
-		"*",
-		"(",
-	}
-	return Contains(validOperations, token)
 }
 func Calculate(tokens []string) (float64, error) {
 	if len(tokens) == 0 {
@@ -161,21 +155,28 @@ func Calculate(tokens []string) (float64, error) {
 			return a * b
 		},
 	}
+	validOperations := map[string]bool{
+		"+": true,
+		"-": true,
+		"/": true,
+		"*": true,
+		"(": true,
+	}
 	stack := NewStack()
 
 	for _, token := range tokens {
 		if val, err := strconv.ParseFloat(token, 64); err == nil {
 			stack.Push(val)
 
-		} else if isOperation(token) {
+		} else if ok, _ := validOperations[token]; ok {
 			second, okSecond := stack.Pop().(float64)
 			first, okFirst := stack.Pop().(float64)
 			if !okSecond || !okFirst {
-				return -1, errors.New(fmt.Sprintf("Error sequence of tokens %s", tokens))
+				return -1, fmt.Errorf("error sequence of tokens %s", tokens)
 			}
 			stack.Push(actions[token](first, second))
 		} else {
-			return -1, errors.New(fmt.Sprintf("Incorrect token %s", token))
+			return -1, fmt.Errorf("incorrect token %s", token)
 		}
 	}
 

@@ -1,10 +1,11 @@
 package uniq
 
 import (
-	"github.com/stretchr/testify/assert"
 	"strings"
 	"testing"
 	"uniq/read_write"
+
+	"github.com/stretchr/testify/assert"
 )
 
 func TestGetUniqStringsPositive(t *testing.T) {

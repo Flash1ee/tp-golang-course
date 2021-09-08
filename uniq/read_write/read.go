@@ -3,7 +3,6 @@ package read_write
 import (
 	"bufio"
 	"bytes"
-	"errors"
 	"flag"
 	"fmt"
 	"io"
@@ -35,7 +34,7 @@ func (u UniqRes) WriteRepeatStr(writer *bufio.Writer) error {
 	}
 
 	if err != nil {
-		return errors.New("write to file error")
+		return fmt.Errorf("write to file error")
 	}
 	return nil
 }
@@ -47,7 +46,7 @@ func (u UniqRes) WriteNotRepeatStr(writer *bufio.Writer) error {
 	}
 
 	if err != nil {
-		return errors.New("write to file error")
+		return fmt.Errorf("write to file error")
 	}
 	return nil
 }
@@ -57,7 +56,7 @@ func (u UniqRes) WriteWithCntStr(writer *bufio.Writer) error {
 	_, err = writer.WriteString(strconv.Itoa(u.Cnt) + "\t" + u.Str + "\n")
 
 	if err != nil {
-		return errors.New("write to file error")
+		return fmt.Errorf("write to file error")
 	}
 	return nil
 }
@@ -66,7 +65,7 @@ func (u UniqRes) WriteDefault(writer *bufio.Writer) error {
 	var err error
 	_, err = writer.WriteString(u.Str + "\n")
 	if err != nil {
-		return errors.New("write to file error")
+		return fmt.Errorf("write to file error")
 	}
 	return nil
 }
@@ -78,12 +77,12 @@ func B2i(b bool) int8 {
 	return 0
 }
 
-func GetFlags(progName string, args []string) (Flags, string, error) {
+func GetFlags(programName string, args []string) (Flags, string, error) {
 
 	var output bytes.Buffer
 	confFlags := Flags{}
 
-	flags := flag.NewFlagSet(progName, flag.ContinueOnError)
+	flags := flag.NewFlagSet(programName, flag.ContinueOnError)
 	flags.SetOutput(&output)
 
 	flags.BoolVar(&confFlags.CntF, "c", false, "prefix lines by the number of occurrences")
@@ -114,12 +113,12 @@ func GetFlags(progName string, args []string) (Flags, string, error) {
 	return confFlags, output.String(), nil
 }
 
-func ReadFile(fname string) ([]string, error) {
+func ReadFile(fileName string) ([]string, error) {
 	var fileData []string
-	f, err := os.Open(fname)
+	f, err := os.Open(fileName)
 
 	if err != nil {
-		if fname == "" {
+		if fileName == "" {
 			f = os.Stdin
 		} else {
 			return fileData, err
@@ -142,7 +141,7 @@ func ReadFile(fname string) ([]string, error) {
 	return lines, buf.Err()
 
 }
-func WriteFile(cnts []UniqRes, flags Flags) error {
+func WriteFile(counts []UniqRes, flags Flags) error {
 	var out io.Writer
 	var err error
 
@@ -166,7 +165,7 @@ func WriteFile(cnts []UniqRes, flags Flags) error {
 
 	writer := bufio.NewWriter(out)
 
-	for _, val := range cnts {
+	for _, val := range counts {
 		if flags.CntF {
 			err = val.WriteWithCntStr(writer)
 		} else if flags.RepeatF {
@@ -177,7 +176,7 @@ func WriteFile(cnts []UniqRes, flags Flags) error {
 			err = val.WriteDefault(writer)
 		}
 		if err != nil {
-			return errors.New("write to file error")
+			return fmt.Errorf("write to file error")
 		}
 	}
 	return writer.Flush()

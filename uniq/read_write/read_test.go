@@ -2,54 +2,57 @@ package read_write
 
 import (
 	"bufio"
-	"github.com/stretchr/testify/assert"
 	"io/ioutil"
 	"log"
 	"os"
 	"strings"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
 )
 
 func TestGetFlagsPositive(t *testing.T) {
 	var tests = []struct {
-		args []string
-		conf Flags
+		description string
+		args        []string
+		conf        Flags
 	}{
-		{[]string{}, Flags{}},
-		{[]string{"-c"}, Flags{true, false, false, 0, 0, false, "", ""}},
-		{[]string{"-f", "10"}, Flags{false, false, false, 10, 0, false, "", ""}},
-		{[]string{"-u"}, Flags{false, false, true, 0, 0, false, "", ""}},
-		{[]string{"-f=10"}, Flags{false, false, false, 10, 0, false, "", ""}},
-		{[]string{"in.txt"}, Flags{false, false, false, 0, 0, false, "in.txt", ""}},
-		{[]string{"in.txt", "out.txt"}, Flags{false, false, false, 0, 0, false, "in.txt", "out.txt"}},
-		{[]string{"-c", "-s", "10", "in.txt", "out.txt"}, Flags{true, false, false, 0, 10, false, "in.txt", "out.txt"}},
-		{[]string{"-d", "-i", "-f", "10", "-s=20", "in.txt", "out.txt"}, Flags{false, true, false, 10, 20, true, "in.txt", "out.txt"}},
+		{"empty flags", []string{}, Flags{}},
+		{"one flag -c", []string{"-c"}, Flags{true, false, false, 0, 0, false, "", ""}},
+		{"flag -f with argument 10", []string{"-f", "10"}, Flags{false, false, false, 10, 0, false, "", ""}},
+		{"one flag -u", []string{"-u"}, Flags{false, false, true, 0, 0, false, "", ""}},
+		{"flag -f with argument 10 usage =", []string{"-f=10"}, Flags{false, false, false, 10, 0, false, "", ""}},
+		{"with input file", []string{"in.txt"}, Flags{false, false, false, 0, 0, false, "in.txt", ""}},
+		{"with input and out file", []string{"in.txt", "out.txt"}, Flags{false, false, false, 0, 0, false, "in.txt", "out.txt"}},
+		{"flags and io files", []string{"-c", "-s", "10", "in.txt", "out.txt"}, Flags{true, false, false, 0, 10, false, "in.txt", "out.txt"}},
+		{"flags ordinary and with args + io files", []string{"-d", "-i", "-f", "10", "-s=20", "in.txt", "out.txt"}, Flags{false, true, false, 10, 20, true, "in.txt", "out.txt"}},
 	}
 	for _, pair := range tests {
 		t.Run(strings.Join(pair.args, " "), func(t *testing.T) {
 			res, _, err := GetFlags(os.Args[0], pair.args)
-			assert.Equal(t, pair.conf, res, "flags must be equal")
+			assert.Equal(t, pair.conf, res, pair.description+"\ngot %v\nexpected %v", pair.args, pair.conf)
 			assert.Nil(t, err)
 		})
 	}
 }
 func TestGetFlagsNegative(t *testing.T) {
 	var tests = []struct {
-		args   []string
-		conf   Flags
-		errstr string
+		description string
+		args        []string
+		conf        Flags
+		errstr      string
 	}{
-		{[]string{"-k"}, Flags{}, UnknownFlagError.Error()},
-		{[]string{"-d", "-u", "-c"}, Flags{}, TogetherArgs.Error()},
-		{[]string{"-c", "-f", "-10"}, Flags{}, SkipNegative.Error()},
-		{[]string{"in.txt", "-c", "-s", "10"}, Flags{}, IncorrectPosition.Error()},
-		{[]string{"-c", "in.txt", "-s", "10"}, Flags{}, IncorrectPosition.Error()},
+		{"incorrect flag", []string{"-k"}, Flags{}, UnknownFlagError.Error()},
+		{"-d -u -c cannot be used together", []string{"-d", "-u", "-c"}, Flags{}, TogetherArgs.Error()},
+		{"count skip of words must be not negative num", []string{"-c", "-f", "-10"}, Flags{}, SkipNegative.Error()},
+		{"positional arguments should be placed at the end", []string{"in.txt", "-c", "-s", "10"}, Flags{}, IncorrectPosition.Error()},
+		{"positional arguments should be placed at the end", []string{"-c", "in.txt", "-s", "10"}, Flags{}, IncorrectPosition.Error()},
 	}
 
 	for _, pair := range tests {
 		t.Run(strings.Join(pair.args, " "), func(t *testing.T) {
 			res, _, err := GetFlags(os.Args[0], pair.args)
-			assert.Equal(t, pair.conf, res, "conf got %+v, want %+v", pair.conf, res)
+			assert.Equal(t, pair.conf, res, pair.description+"\nconf got %+v, want %+v", pair.conf, res)
 			assert.Equal(t, pair.errstr, err.Error())
 			assert.NotNil(t, err, "err got %v, want nil", err)
 		})
@@ -99,7 +102,7 @@ func TestReadFilePositive(t *testing.T) {
 			}
 
 			res, err := ReadFile(fname)
-			assert.Equal(t, pair.expected, res)
+			assert.Equal(t, pair.expected, res, "incorrect write to file\n got: %v\nexpected: %v", res, pair.expected)
 			assert.Nil(t, err)
 		})
 	}
@@ -131,7 +134,8 @@ func TestReadFileNegative(t *testing.T) {
 			}
 
 			res, err := ReadFile(tempFile.Name())
-			assert.Equal(t, pair.expected, res)
+			assert.Equal(t, pair.expected, res,
+				"incorrect write to file\ngot: %v\nexpected: %v", res, pair.expected)
 			assert.NotNil(t, err)
 		})
 	}
@@ -196,7 +200,8 @@ func TestWriteFilePositive(t *testing.T) {
 			for reader.Scan() {
 				lines = append(lines, reader.Text())
 			}
-			assert.Equal(t, pair.expected, lines)
+			assert.Equal(t, pair.expected, lines,
+				"incorrect write to file\ngot: %v\nexpected: %v", lines, pair.expected)
 
 		})
 	}

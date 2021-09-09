@@ -10,21 +10,23 @@ import (
 
 func TestGetUniqStringsPositive(t *testing.T) {
 	var tests = []struct {
-		data     []string
-		flags    read_write.Flags
-		expected []read_write.UniqRes
+		description string
+		data        []string
+		flags       read_write.Flags
+		expected    []read_write.UniqRes
 	}{
-		{data: []string{
-			"I love music.",
-			"I love music.",
-			"I love music.",
-			" ",
-			"I love music of Kartik.",
-			"I love music of Kartik.",
-			"Thanks.",
-			"I love music of Kartik.",
-			"I love music of Kartik.",
-		},
+		{description: "test with duplicate strings",
+			data: []string{
+				"I love music.",
+				"I love music.",
+				"I love music.",
+				" ",
+				"I love music of Kartik.",
+				"I love music of Kartik.",
+				"Thanks.",
+				"I love music of Kartik.",
+				"I love music of Kartik.",
+			},
 			flags: read_write.Flags{},
 			expected: []read_write.UniqRes{
 				{Str: "I love music.", Cnt: 3}, {Str: " ", Cnt: 1},
@@ -33,11 +35,13 @@ func TestGetUniqStringsPositive(t *testing.T) {
 			},
 		},
 		{
-			data:     []string{},
-			flags:    read_write.Flags{},
-			expected: []read_write.UniqRes{},
+			description: "test with empty input data",
+			data:        []string{},
+			flags:       read_write.Flags{},
+			expected:    []read_write.UniqRes{},
 		},
 		{
+			description: "test with duplicate strings in different case",
 			data: []string{
 				"I LOVE MUSIC.",
 				"I love music.",
@@ -54,6 +58,7 @@ func TestGetUniqStringsPositive(t *testing.T) {
 				{Str: "Thanks.", Cnt: 1}, {Str: "I love music of kartik.", Cnt: 2}},
 		},
 		{
+			description: "test which calculate repeated strings",
 			data: []string{
 				"I love music.",
 				"I love music.",
@@ -71,6 +76,7 @@ func TestGetUniqStringsPositive(t *testing.T) {
 				{Str: "I love music of Kartik.", Cnt: 2}},
 		},
 		{
+			description: "test which skip first word and calculate uniq",
 			data: []string{
 				"We love music.",
 				"I love music.",
@@ -85,6 +91,7 @@ func TestGetUniqStringsPositive(t *testing.T) {
 				{Str: "I love music of Kartik.", Cnt: 2}, {Str: "Thanks.", Cnt: 1}},
 		},
 		{
+			description: "test which skip first char and calculate uniq",
 			data: []string{
 				"We love music.",
 				"I love music.",
@@ -100,6 +107,7 @@ func TestGetUniqStringsPositive(t *testing.T) {
 				{Str: "I love music of Kartik.", Cnt: 1}, {Str: "We love music of Kartik.", Cnt: 1}, {Str: "Thanks.", Cnt: 1}},
 		},
 		{
+			description: "test which skip 0 chars and calculate uniq",
 			data: []string{
 				"We love music.",
 				"I love music.",
@@ -111,6 +119,7 @@ func TestGetUniqStringsPositive(t *testing.T) {
 				{Str: "They love music.", Cnt: 1}},
 		},
 		{
+			description: "test which skip 0 word and calculate uniq",
 			data: []string{
 				"We love music.",
 				"I love music.",
@@ -125,121 +134,237 @@ func TestGetUniqStringsPositive(t *testing.T) {
 	for _, pair := range tests {
 		t.Run(strings.Join(pair.data, "\n"), func(t *testing.T) {
 			res, err := GetUniqStrings(pair.data, pair.flags)
-			assert.Equal(t, pair.expected, res)
-			assert.Nil(t, err)
+			assert.Equal(t, pair.expected, res, pair.description+"\ngot: %v\nexpected: %v\n", res, pair.expected)
+			assert.Nil(t, err, pair.description+"\ngot: %v\nexpected: %v\n", err, nil)
 		})
 	}
 }
 
 func TestGetUniqStringsNegative(t *testing.T) {
 	var tests = []struct {
-		data  []string
-		flags read_write.Flags
-		err   error
+		description string
+		data        []string
+		flags       read_write.Flags
+		err         error
 	}{
 		{
-			data:  []string{"I love music", "T love music"},
-			flags: read_write.Flags{CntSkipCharsF: -1},
-			err:   IncorrectArgs,
+			description: "test with negative count of skip chars",
+			data:        []string{"I love music", "T love music"},
+			flags:       read_write.Flags{CntSkipCharsF: -1},
+			err:         IncorrectArgs,
 		},
 		{
-			data:  []string{"I love music", "We love music"},
-			flags: read_write.Flags{CntSkipWordsF: -1},
-			err:   IncorrectArgs,
+			description: "test with negative count of skip words",
+			data:        []string{"I love music", "We love music"},
+			flags:       read_write.Flags{CntSkipWordsF: -1},
+			err:         IncorrectArgs,
 		},
 	}
 	for _, pair := range tests {
 		t.Run(strings.Join(pair.data, "\n"), func(t *testing.T) {
 			res, err := GetUniqStrings(pair.data, pair.flags)
-			assert.Equal(t, res, []read_write.UniqRes{})
-			assert.Equal(t, pair.err, err)
-			assert.NotNil(t, err)
+			assert.Equal(t, res, []read_write.UniqRes{},
+				pair.description+"\ngot: %v\nexpected: %v", res, []read_write.UniqRes{})
+			assert.Equal(t, pair.err, err, pair.description+"\ngot: %v\nexpected: %v", err, pair.err)
+			assert.NotNil(t, err, pair.description+"\ngot: %v\nexpected: %v\n", err, nil)
 		})
 	}
 }
 func TestSkipWordsNegative(t *testing.T) {
 	var tests = []struct {
-		prev    string
-		cur     string
-		cnt     int
-		newPrev string
-		newCur  string
-		err     error
+		description string
+		prev        string
+		cur         string
+		cnt         int
+		newPrev     string
+		newCur      string
+		err         error
 	}{
 		{
-			prev:    "I love music",
-			cur:     "You love music",
-			cnt:     0,
-			newPrev: "I love music",
-			newCur:  "You love music",
-			err:     nil,
+			description: "test which skip 0 words",
+			prev:        "I love music",
+			cur:         "You love music",
+			cnt:         0,
+			newPrev:     "I love music",
+			newCur:      "You love music",
+			err:         nil,
 		},
 		{
-			prev:    "I love music",
-			cur:     "You love music",
-			cnt:     -1,
-			newPrev: "I love music",
-			newCur:  "You love music",
-			err:     IncorrectArgs,
+			description: "test which skip -1 words, must fail with an error",
+			prev:        "I love music",
+			cur:         "You love music",
+			cnt:         -1,
+			newPrev:     "I love music",
+			newCur:      "You love music",
+			err:         IncorrectArgs,
 		},
 	}
 	for _, pair := range tests {
 		t.Run(strings.Join([]string{pair.prev, "\n", pair.cur}, "\n"), func(t *testing.T) {
 			var prev, cur string
 			prev, cur, err := SkipWords(pair.prev, pair.cur, pair.cnt)
-			assert.Equal(t, prev, pair.newPrev)
-			assert.Equal(t, cur, pair.newCur)
+			assert.Equal(t, prev, pair.newPrev, pair.description+"\ngot: %v\nexpected: %v\n", prev, pair.newPrev)
+			assert.Equal(t, cur, pair.newCur, pair.description+"\ngot: %v\nexpected: %v\n", cur, pair.newCur)
 			if err != nil {
-				assert.Equal(t, pair.err.Error(), err.Error())
+				assert.Equal(t, pair.err.Error(), err.Error(),
+					pair.description+"\ngot: %v\nexpected: %v\n", err.Error(), pair.err.Error())
+			}
+		})
+	}
+}
+func TestSkipWordsPositive(t *testing.T) {
+	var tests = []struct {
+		description string
+		prev        string
+		cur         string
+		cnt         int
+		newPrev     string
+		newCur      string
+		err         error
+	}{
+		{
+			description: "test which skip 0 words",
+			prev:        "I love music",
+			cur:         "You love music",
+			cnt:         0,
+			newPrev:     "I love music",
+			newCur:      "You love music",
+			err:         nil,
+		},
+		{
+			description: "test which skip 3 word",
+			prev:        "I love music",
+			cur:         "You love music",
+			cnt:         3,
+			newPrev:     "",
+			newCur:      "",
+			err:         nil,
+		},
+		{
+			description: "test which skip 3 words",
+			prev:        "I love music",
+			cur:         "You love music",
+			cnt:         1,
+			newPrev:     "love music",
+			newCur:      "love music",
+			err:         nil,
+		},
+	}
+	for _, pair := range tests {
+		t.Run(strings.Join([]string{pair.prev, "\n", pair.cur}, "\n"), func(t *testing.T) {
+			var prev, cur string
+			prev, cur, err := SkipWords(pair.prev, pair.cur, pair.cnt)
+			assert.Equal(t, prev, pair.newPrev, pair.description+"\ngot: %v\nexpected: %v\n", prev, pair.newPrev)
+			assert.Equal(t, cur, pair.newCur, pair.description+"\ngot: %v\nexpected: %v\n", cur, pair.newCur)
+			if err != nil {
+				assert.Equal(t, pair.err.Error(), err.Error(),
+					pair.description+"\ngot: %v\nexpected: %v\n", err.Error(), pair.err.Error())
 			}
 		})
 	}
 }
 func TestSkipCharsNegative(t *testing.T) {
 	var tests = []struct {
-		prev    string
-		cur     string
-		cnt     int
-		newPrev string
-		newCur  string
-		err     error
+		description string
+		prev        string
+		cur         string
+		cnt         int
+		newPrev     string
+		newCur      string
+		err         error
 	}{
 		{
-			prev:    "I love music",
-			cur:     "You love music",
-			cnt:     0,
-			newPrev: "I love music",
-			newCur:  "You love music",
-			err:     nil,
+			description: "test which skip 0 symbols",
+			prev:        "I love music",
+			cur:         "You love music",
+			cnt:         0,
+			newPrev:     "I love music",
+			newCur:      "You love music",
+			err:         nil,
 		},
 		{
-			prev:    "I love music",
-			cur:     "You love music",
-			cnt:     -1,
-			newPrev: "I love music",
-			newCur:  "You love music",
-			err:     IncorrectArgs,
+			description: "test which skip 0 symbols, must fail with an error",
+			prev:        "I love music",
+			cur:         "You love music",
+			cnt:         -1,
+			newPrev:     "I love music",
+			newCur:      "You love music",
+			err:         IncorrectArgs,
 		},
 	}
 	for _, pair := range tests {
 		t.Run(strings.Join([]string{pair.prev, "\n", pair.cur}, "\n"), func(t *testing.T) {
 			var prev, cur string
 			prev, cur, err := SkipChars(pair.prev, pair.cur, pair.cnt)
-			assert.Equal(t, prev, pair.newPrev)
-			assert.Equal(t, cur, pair.newCur)
+			assert.Equal(t, prev, pair.newPrev, pair.description+"\ngot: %v\nexpected: %v\n", prev, pair.newPrev)
+			assert.Equal(t, cur, pair.newCur, pair.description+"\ngot: %v\nexpected: %v\n", cur, pair.newCur)
 			if err != nil {
-				assert.Equal(t, pair.err.Error(), err.Error())
+				assert.Equal(t, pair.err.Error(), err.Error(),
+					pair.description+"\ngot: %v\nexpected: %v\n", err.Error(), pair.err.Error())
+			}
+		})
+	}
+}
+func TestSkipCharsPositive(t *testing.T) {
+	var tests = []struct {
+		description string
+		prev        string
+		cur         string
+		cnt         int
+		newPrev     string
+		newCur      string
+		err         error
+	}{
+		{
+			description: "test which skip 0 symbols",
+			prev:        "I love music",
+			cur:         "You love music",
+			cnt:         0,
+			newPrev:     "I love music",
+			newCur:      "You love music",
+			err:         nil,
+		},
+		{
+			description: "test which skip 2 symbols",
+			prev:        "I love music",
+			cur:         "You love music",
+			cnt:         2,
+			newPrev:     "love music",
+			newCur:      "u love music",
+			err:         nil,
+		},
+		{
+			description: "test which skip len of string symbols",
+			prev:        "I love music",
+			cur:         "You love music",
+			cnt:         12,
+			newPrev:     "",
+			newCur:      "ic",
+			err:         nil,
+		},
+	}
+	for _, pair := range tests {
+		t.Run(strings.Join([]string{pair.prev, "\n", pair.cur}, "\n"), func(t *testing.T) {
+			var prev, cur string
+			prev, cur, err := SkipChars(pair.prev, pair.cur, pair.cnt)
+			assert.Equal(t, prev, pair.newPrev, pair.description+"\ngot: %v\nexpected: %v\n", prev, pair.newPrev)
+			assert.Equal(t, cur, pair.newCur, pair.description+"\ngot: %v\nexpected: %v\n", cur, pair.newCur)
+			if err != nil {
+				assert.Equal(t, pair.err.Error(), err.Error(),
+					pair.description+"\ngot: %v\nexpected: %v\n", err.Error(), pair.err.Error())
 			}
 		})
 	}
 }
 func TestUniq(t *testing.T) {
 	var tests = []struct {
-		data     []string
-		flags    read_write.Flags
-		expected []read_write.UniqRes
+		description string
+		data        []string
+		flags       read_write.Flags
+		expected    []read_write.UniqRes
 	}{
 		{
+			description: "test without args",
 			data: []string{
 				"I love music.",
 				"I love music.",
@@ -265,8 +390,8 @@ func TestUniq(t *testing.T) {
 	for _, pair := range tests {
 		t.Run(strings.Join(pair.data, " "), func(t *testing.T) {
 			res, err := Uniq(pair.data, pair.flags)
-			assert.Equal(t, pair.expected, res)
-			assert.Nil(t, err)
+			assert.Equal(t, pair.expected, res, pair.description+"\ngot: %v\nexpected: %v\n", res, pair.expected)
+			assert.Nil(t, err, pair.description+"\ngot: %v\nexpected: %v\n", nil, err)
 		})
 	}
 }

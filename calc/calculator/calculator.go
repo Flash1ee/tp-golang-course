@@ -14,7 +14,7 @@ func GetTokens(data string) ([]string, error) {
 	for _, val := range data {
 		cur := string(val)
 		if cur != " " {
-			if ok, _ := validTokens[cur]; ok {
+			if ok := validTokens[cur]; ok {
 				if flagNum {
 					res = append(res, curNum)
 					flagNum = false
@@ -101,7 +101,7 @@ func Calculate(tokens []string) (float64, error) {
 	for _, token := range tokens {
 		if val, err := strconv.ParseFloat(token, 64); err == nil {
 			stack.Push(val)
-		} else if ok, _ := validOperations[token]; ok {
+		} else if ok := validOperations[token]; ok {
 			second, okSecond := stack.Pop().(float64)
 			first, okFirst := stack.Pop().(float64)
 			if !okSecond || !okFirst {

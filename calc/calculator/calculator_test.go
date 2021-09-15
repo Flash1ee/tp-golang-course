@@ -1,14 +1,13 @@
 package calculator
 
 import (
-	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
 )
 
 func TestGetTokensPositive(t *testing.T) {
-	var tests = []struct {
+	tests := []struct {
 		description string
 		data        string
 		expected    []string
@@ -40,15 +39,16 @@ func TestGetTokensPositive(t *testing.T) {
 		},
 	}
 	for _, pair := range tests {
-		t.Run(pair.data, func(t *testing.T) {
+		t.Run(pair.description, func(t *testing.T) {
 			res, err := GetTokens(pair.data)
 			assert.Equal(t, pair.expected, res, pair.description+"\ngot: %v\nexpected: %v\n", res, pair.expected)
 			assert.Nil(t, err, pair.description+"\ngot: %v\nexpected: %v\n", err, nil)
 		})
 	}
 }
+
 func TestGetTokensNegative(t *testing.T) {
-	var tests = []struct {
+	tests := []struct {
 		description string
 		data        string
 		expected    []string
@@ -65,15 +65,16 @@ func TestGetTokensNegative(t *testing.T) {
 		},
 	}
 	for _, pair := range tests {
-		t.Run(pair.data, func(t *testing.T) {
+		t.Run(pair.description, func(t *testing.T) {
 			res, err := GetTokens(pair.data)
 			assert.Equal(t, pair.expected, res, pair.description+"\ngot: %v\nexpected: %v\n", res, pair.expected)
 			assert.NotNil(t, err, pair.description+"\ngot: %v\nexpected: %v\n", err, nil)
 		})
 	}
 }
+
 func TestInfixToPostfixPositive(t *testing.T) {
-	var tests = []struct {
+	tests := []struct {
 		description string
 		tokens      []string
 		expected    []string
@@ -100,15 +101,16 @@ func TestInfixToPostfixPositive(t *testing.T) {
 		},
 	}
 	for _, pair := range tests {
-		t.Run(strings.Join(pair.tokens, ""), func(t *testing.T) {
+		t.Run(pair.description, func(t *testing.T) {
 			res, err := InfixToPostfix(pair.tokens)
 			assert.Equal(t, pair.expected, res, pair.description+"\ngot: %v\nexpected: %v\n", res, pair.expected)
 			assert.Nil(t, err, pair.description+"\ngot: %v\nexpected: %v\n", err, nil)
 		})
 	}
 }
+
 func TestInfixToPostfixNegative(t *testing.T) {
-	var tests = []struct {
+	tests := []struct {
 		description string
 		tokens      []string
 	}{
@@ -122,14 +124,15 @@ func TestInfixToPostfixNegative(t *testing.T) {
 		},
 	}
 	for _, pair := range tests {
-		t.Run(strings.Join(pair.tokens, ""), func(t *testing.T) {
+		t.Run(pair.description, func(t *testing.T) {
 			_, err := InfixToPostfix(pair.tokens)
 			assert.NotNil(t, err, pair.description+"\ngot: %v\nexpected: %v\n", err, nil)
 		})
 	}
 }
+
 func TestCalculatePositive(t *testing.T) {
-	var tests = []struct {
+	tests := []struct {
 		description string
 		postfixExpr []string
 		expected    float64
@@ -161,7 +164,7 @@ func TestCalculatePositive(t *testing.T) {
 		},
 	}
 	for _, pair := range tests {
-		t.Run(strings.Join(pair.postfixExpr, ""), func(t *testing.T) {
+		t.Run(pair.description, func(t *testing.T) {
 			res, err := Calculate(pair.postfixExpr)
 			assert.Equal(t, pair.expected, res, pair.description+"\ngot: %v\nexpected: %v\n", res, pair.expected)
 			assert.Nil(t, err, pair.description+"\ngot: %v\nexpected: %v\n", err, nil)
@@ -170,7 +173,7 @@ func TestCalculatePositive(t *testing.T) {
 }
 
 func TestCalculateNegative(t *testing.T) {
-	var tests = []struct {
+	tests := []struct {
 		description string
 		postfixExpr []string
 	}{
@@ -184,7 +187,7 @@ func TestCalculateNegative(t *testing.T) {
 		},
 	}
 	for _, pair := range tests {
-		t.Run(strings.Join(pair.postfixExpr, ""), func(t *testing.T) {
+		t.Run(pair.description, func(t *testing.T) {
 			res, err := Calculate(pair.postfixExpr)
 			assert.Equal(t, -1., res, pair.description+"\ngot: %v\nexpected: %v\n", res, -1.)
 			assert.NotNil(t, err, pair.description+"\ngot: %v\nexpected: %v\n", err, nil)

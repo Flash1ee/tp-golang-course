@@ -8,7 +8,5 @@ func (e ProcError) Error() string {
 	return e.Message
 }
 
-var (
-	IncorrectArgs = ProcError{Message: "Incorrect argument\n" +
-		"Run the program with the --help flag to output supported commands"}
-)
+var IncorrectArgs = ProcError{Message: "Incorrect argument\n" +
+	"Run the program with the --help flag to output supported commands"}

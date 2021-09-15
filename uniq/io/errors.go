@@ -1,4 +1,4 @@
-package read_write
+package io
 
 type ParseError struct {
 	Message string

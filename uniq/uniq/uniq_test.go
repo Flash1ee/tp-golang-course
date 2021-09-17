@@ -1,0 +1,431 @@
+package uniq
+
+import (
+	"strings"
+	"testing"
+	"uniq/io"
+
+	"github.com/stretchr/testify/assert"
+)
+
+func TestGetUniqStringsPositive(t *testing.T) {
+	tests := []struct {
+		description string
+		data        []string
+		flags       io.Flags
+		expected    []io.UniqRes
+	}{
+		{
+			description: "test with duplicate strings",
+			data: []string{
+				"I love music.",
+				"I love music.",
+				"I love music.",
+				" ",
+				"I love music of Kartik.",
+				"I love music of Kartik.",
+				"Thanks.",
+				"I love music of Kartik.",
+				"I love music of Kartik.",
+			},
+			flags: io.Flags{},
+			expected: []io.UniqRes{
+				{Str: "I love music.", Cnt: 3},
+				{Str: " ", Cnt: 1},
+				{Str: "I love music of Kartik.", Cnt: 2},
+				{Str: "Thanks.", Cnt: 1},
+				{Str: "I love music of Kartik.", Cnt: 2},
+			},
+		},
+		{
+			description: "test with empty input data",
+			data:        []string{},
+			flags:       io.Flags{},
+			expected:    []io.UniqRes{},
+		},
+		{
+			description: "test with duplicate strings in different case",
+			data: []string{
+				"I LOVE MUSIC.",
+				"I love music.",
+				"I LoVe MuSiC.",
+
+				"I love MuSIC of Kartik.",
+				"I love music of kartik.",
+				"Thanks.",
+				"I love music of kartik.",
+				"I love MuSIC of Kartik.",
+			},
+			flags: io.Flags{RegisterSkipF: true},
+			expected: []io.UniqRes{
+				{Str: "I LOVE MUSIC.", Cnt: 3},
+				{Str: "I love MuSIC of Kartik.", Cnt: 2},
+				{Str: "Thanks.", Cnt: 1},
+				{Str: "I love music of kartik.", Cnt: 2},
+			},
+		},
+		{
+			description: "test which calculate repeated strings",
+			data: []string{
+				"I love music.",
+				"I love music.",
+				"I love music.",
+				"",
+				"I love music of Kartik.",
+				"I love music of Kartik.",
+				"Thanks.",
+				"I love music of Kartik.",
+				"I love music of Kartik.",
+			},
+			flags: io.Flags{RepeatF: true},
+			expected: []io.UniqRes{
+				{Str: "I love music.", Cnt: 3},
+				{Str: "", Cnt: 1},
+				{Str: "I love music of Kartik.", Cnt: 2},
+				{Str: "Thanks.", Cnt: 1},
+				{Str: "I love music of Kartik.", Cnt: 2},
+			},
+		},
+		{
+			description: "test which skip first word and calculate uniq",
+			data: []string{
+				"We love music.",
+				"I love music.",
+				"They love music.",
+				"",
+				"I love music of Kartik.",
+				"We love music of Kartik.",
+				"Thanks.",
+			},
+			flags: io.Flags{CntSkipWordsF: 1},
+			expected: []io.UniqRes{
+				{Str: "We love music.", Cnt: 3},
+				{Str: "", Cnt: 1},
+				{Str: "I love music of Kartik.", Cnt: 2},
+				{Str: "Thanks.", Cnt: 1},
+			},
+		},
+		{
+			description: "test which skip first char and calculate uniq",
+			data: []string{
+				"We love music.",
+				"I love music.",
+				"They love music.",
+				"",
+				"I love music of Kartik.",
+				"We love music of Kartik.",
+				"Thanks.",
+			},
+			flags: io.Flags{CntSkipCharsF: 1},
+			expected: []io.UniqRes{
+				{Str: "We love music.", Cnt: 1},
+				{Str: "I love music.", Cnt: 1},
+				{Str: "They love music.", Cnt: 1},
+				{Str: "", Cnt: 1},
+				{Str: "I love music of Kartik.", Cnt: 1},
+				{Str: "We love music of Kartik.", Cnt: 1},
+				{Str: "Thanks.", Cnt: 1},
+			},
+		},
+		{
+			description: "test which skip 0 chars and calculate uniq",
+			data: []string{
+				"We love music.",
+				"I love music.",
+				"I love music.",
+				"They love music.",
+			},
+			flags: io.Flags{CntSkipCharsF: 0},
+			expected: []io.UniqRes{
+				{Str: "We love music.", Cnt: 1},
+				{Str: "I love music.", Cnt: 2},
+				{Str: "They love music.", Cnt: 1},
+			},
+		},
+		{
+			description: "test which skip 0 word and calculate uniq",
+			data: []string{
+				"We love music.",
+				"I love music.",
+				"I love music.",
+				"They love music.",
+			},
+			flags: io.Flags{CntSkipWordsF: 0},
+			expected: []io.UniqRes{
+				{Str: "We love music.", Cnt: 1},
+				{Str: "I love music.", Cnt: 2},
+				{Str: "They love music.", Cnt: 1},
+			},
+		},
+	}
+	for _, pair := range tests {
+		t.Run(pair.description, func(t *testing.T) {
+			res, err := GetUniqStrings(pair.data, pair.flags)
+			assert.Equal(t, pair.expected, res, pair.description+"\ngot: %v\nexpected: %v\n", res, pair.expected)
+			assert.Nil(t, err, pair.description+"\ngot: %v\nexpected: %v\n", err, nil)
+		})
+	}
+}
+
+func TestGetUniqStringsNegative(t *testing.T) {
+	tests := []struct {
+		description string
+		data        []string
+		flags       io.Flags
+		err         error
+	}{
+		{
+			description: "test with negative count of skip chars",
+			data:        []string{"I love music", "T love music"},
+			flags:       io.Flags{CntSkipCharsF: -1},
+			err:         IncorrectArgs,
+		},
+		{
+			description: "test with negative count of skip words",
+			data:        []string{"I love music", "We love music"},
+			flags:       io.Flags{CntSkipWordsF: -1},
+			err:         IncorrectArgs,
+		},
+	}
+	for _, pair := range tests {
+		t.Run(strings.Join(pair.data, "\n"), func(t *testing.T) {
+			res, err := GetUniqStrings(pair.data, pair.flags)
+			assert.Equal(t, res, []io.UniqRes{},
+				pair.description+"\ngot: %v\nexpected: %v", res, []io.UniqRes{})
+			assert.Equal(t, pair.err, err, pair.description+"\ngot: %v\nexpected: %v", err, pair.err)
+			assert.NotNil(t, err, pair.description+"\ngot: %v\nexpected: %v\n", err, nil)
+		})
+	}
+}
+
+func TestSkipWordsNegative(t *testing.T) {
+	tests := []struct {
+		description string
+		prev        string
+		cur         string
+		cnt         int
+		newPrev     string
+		newCur      string
+		err         error
+	}{
+		{
+			description: "test which skip 0 words",
+			prev:        "I love music",
+			cur:         "You love music",
+			cnt:         0,
+			newPrev:     "I love music",
+			newCur:      "You love music",
+			err:         nil,
+		},
+		{
+			description: "test which skip -1 words, must fail with an error",
+			prev:        "I love music",
+			cur:         "You love music",
+			cnt:         -1,
+			newPrev:     "I love music",
+			newCur:      "You love music",
+			err:         IncorrectArgs,
+		},
+	}
+	for _, pair := range tests {
+		t.Run(strings.Join([]string{pair.prev, "\n", pair.cur}, "\n"), func(t *testing.T) {
+			var prev, cur string
+			prev, cur, err := SkipWords(pair.prev, pair.cur, pair.cnt)
+			assert.Equal(t, prev, pair.newPrev, pair.description+"\ngot: %v\nexpected: %v\n", prev, pair.newPrev)
+			assert.Equal(t, cur, pair.newCur, pair.description+"\ngot: %v\nexpected: %v\n", cur, pair.newCur)
+			if err != nil {
+				assert.Equal(t, pair.err.Error(), err.Error(),
+					pair.description+"\ngot: %v\nexpected: %v\n", err.Error(), pair.err.Error())
+			}
+		})
+	}
+}
+
+func TestSkipWordsPositive(t *testing.T) {
+	tests := []struct {
+		description string
+		prev        string
+		cur         string
+		cnt         int
+		newPrev     string
+		newCur      string
+		err         error
+	}{
+		{
+			description: "test which skip 0 words",
+			prev:        "I love music",
+			cur:         "You love music",
+			cnt:         0,
+			newPrev:     "I love music",
+			newCur:      "You love music",
+			err:         nil,
+		},
+		{
+			description: "test which skip 3 word",
+			prev:        "I love music",
+			cur:         "You love music",
+			cnt:         3,
+			newPrev:     "",
+			newCur:      "",
+			err:         nil,
+		},
+		{
+			description: "test which skip 3 words",
+			prev:        "I love music",
+			cur:         "You love music",
+			cnt:         1,
+			newPrev:     "love music",
+			newCur:      "love music",
+			err:         nil,
+		},
+	}
+	for _, pair := range tests {
+		t.Run(pair.description, func(t *testing.T) {
+			var prev, cur string
+			prev, cur, err := SkipWords(pair.prev, pair.cur, pair.cnt)
+			assert.Equal(t, prev, pair.newPrev, pair.description+"\ngot: %v\nexpected: %v\n", prev, pair.newPrev)
+			assert.Equal(t, cur, pair.newCur, pair.description+"\ngot: %v\nexpected: %v\n", cur, pair.newCur)
+			if err != nil {
+				assert.Equal(t, pair.err.Error(), err.Error(),
+					pair.description+"\ngot: %v\nexpected: %v\n", err.Error(), pair.err.Error())
+			}
+		})
+	}
+}
+
+func TestSkipCharsNegative(t *testing.T) {
+	tests := []struct {
+		description string
+		prev        string
+		cur         string
+		cnt         int
+		newPrev     string
+		newCur      string
+		err         error
+	}{
+		{
+			description: "test which skip 0 symbols",
+			prev:        "I love music",
+			cur:         "You love music",
+			cnt:         0,
+			newPrev:     "I love music",
+			newCur:      "You love music",
+			err:         nil,
+		},
+		{
+			description: "test which skip 0 symbols, must fail with an error",
+			prev:        "I love music",
+			cur:         "You love music",
+			cnt:         -1,
+			newPrev:     "I love music",
+			newCur:      "You love music",
+			err:         IncorrectArgs,
+		},
+	}
+	for _, pair := range tests {
+		t.Run(pair.description, func(t *testing.T) {
+			var prev, cur string
+			prev, cur, err := SkipChars(pair.prev, pair.cur, pair.cnt)
+			assert.Equal(t, prev, pair.newPrev, pair.description+"\ngot: %v\nexpected: %v\n", prev, pair.newPrev)
+			assert.Equal(t, cur, pair.newCur, pair.description+"\ngot: %v\nexpected: %v\n", cur, pair.newCur)
+			if err != nil {
+				assert.Equal(t, pair.err.Error(), err.Error(),
+					pair.description+"\ngot: %v\nexpected: %v\n", err.Error(), pair.err.Error())
+			}
+		})
+	}
+}
+
+func TestSkipCharsPositive(t *testing.T) {
+	tests := []struct {
+		description string
+		prev        string
+		cur         string
+		cnt         int
+		newPrev     string
+		newCur      string
+		err         error
+	}{
+		{
+			description: "test which skip 0 symbols",
+			prev:        "I love music",
+			cur:         "You love music",
+			cnt:         0,
+			newPrev:     "I love music",
+			newCur:      "You love music",
+			err:         nil,
+		},
+		{
+			description: "test which skip 2 symbols",
+			prev:        "I love music",
+			cur:         "You love music",
+			cnt:         2,
+			newPrev:     "love music",
+			newCur:      "u love music",
+			err:         nil,
+		},
+		{
+			description: "test which skip len of string symbols",
+			prev:        "I love music",
+			cur:         "You love music",
+			cnt:         12,
+			newPrev:     "",
+			newCur:      "ic",
+			err:         nil,
+		},
+	}
+	for _, pair := range tests {
+		t.Run(pair.description, func(t *testing.T) {
+			var prev, cur string
+			prev, cur, err := SkipChars(pair.prev, pair.cur, pair.cnt)
+			assert.Equal(t, prev, pair.newPrev, pair.description+"\ngot: %v\nexpected: %v\n", prev, pair.newPrev)
+			assert.Equal(t, cur, pair.newCur, pair.description+"\ngot: %v\nexpected: %v\n", cur, pair.newCur)
+			if err != nil {
+				assert.Equal(t, pair.err.Error(), err.Error(),
+					pair.description+"\ngot: %v\nexpected: %v\n", err.Error(), pair.err.Error())
+			}
+		})
+	}
+}
+
+func TestUniq(t *testing.T) {
+	tests := []struct {
+		description string
+		data        []string
+		flags       io.Flags
+		expected    []io.UniqRes
+	}{
+		{
+			description: "test without args",
+			data: []string{
+				"I love music.",
+				"I love music.",
+				"I love music.",
+				" ",
+				"I love music of Kartik.",
+				"I love music of Kartik.",
+				"Thanks.",
+				"I love music of Kartik.",
+				"I love music of Kartik.",
+			},
+			flags: io.Flags{},
+			expected: []io.UniqRes{
+				{Str: "I love music.", Cnt: 3},
+				{Str: " ", Cnt: 1},
+				{Str: "I love music of Kartik.", Cnt: 2},
+				{Str: "Thanks.", Cnt: 1},
+				{Str: "I love music of Kartik.", Cnt: 2},
+			},
+		},
+		{
+			expected: []io.UniqRes{},
+		},
+	}
+	for _, pair := range tests {
+		t.Run(pair.description, func(t *testing.T) {
+			res, err := Uniq(pair.data, pair.flags)
+			assert.Equal(t, pair.expected, res, pair.description+"\ngot: %v\nexpected: %v\n", res, pair.expected)
+			assert.Nil(t, err, pair.description+"\ngot: %v\nexpected: %v\n", nil, err)
+		})
+	}
+}

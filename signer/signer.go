@@ -63,15 +63,29 @@ var Crc32Parallel = func(data string, out chan string) {
 var MultiHash = func(in, out chan interface{}) {
 	wg := &sync.WaitGroup{}
 
+	mu := &sync.Mutex{}
 	for el := range in {
 		wg.Add(1)
+		go ProcessMultiHash(el, out, wg, mu)
 
 	}
 	wg.Wait()
 }
 
-var ProcessSingleHash = func(in, out chan interface{}, wg *sync.WaitGroup, mu sync.Mutex) {
+var ProcessMultiHash = func(el interface{}, out chan interface{}, wg *sync.WaitGroup, mu *sync.Mutex) {
+	const th = 6
 
+	buf := make([]string, th)
+	dataChan := make(chan string)
+	for i := 0; i < th; i++ {
+		data := strconv.Itoa(i) + el.(string)
+
+		go Crc32Parallel(data, dataChan)
+		//crc32 := DataSignerCrc32(data)
+		buf[i] = <-dataChan
+	}
+	out <- strings.Join(buf, "")
+	wg.Done()
 }
 
 var CombineResults = func(in, out chan interface{}) {

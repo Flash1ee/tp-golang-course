@@ -25,29 +25,54 @@ var ExecutePipeline = func(jobs ...job) {
 
 var BeforeJob = func(job job, in, out chan interface{}, wg *sync.WaitGroup) {
 	job(in, out)
+	close(out)
 	wg.Done()
 }
 
 var SingleHash = func(in, out chan interface{}) {
 	wg := &sync.WaitGroup{}
 
+	mu := &sync.Mutex{}
 	for el := range in {
 		wg.Add(1)
-		ProcessSingleHash(el, out, wg)
+		go ProcessSingleHash(el, out, wg, mu)
 	}
+	wg.Wait()
 }
 
-var ProcessSingleHash = func(el interface{}, out chan interface{}, wg *sync.WaitGroup) {
+var ProcessSingleHash = func(el interface{}, out chan interface{}, wg *sync.WaitGroup, mu *sync.Mutex) {
 	data := strconv.Itoa((el).(int))
 
-	crc32 := DataSignerCrc32(data)
-	crc32Md5 := DataSignerCrc32(DataSignerMd5(data))
+	mu.Lock()
+	md5 := DataSignerMd5(data)
+	mu.Unlock()
 
+	//dataChanCrc32 := make(chan string)
+	//go Crc32Parallel(data, dataChanCrc32)
+	crc32Md5 := DataSignerCrc32(md5)
+	//crc32 := <- dataChanCrc32
+	crc32 := DataSignerCrc32(data)
 	out <- crc32 + "~" + crc32Md5
 
 	wg.Done()
 }
-var MultiHash = func(in, out chan interface{}) {}
+var Crc32Parallel = func(data string, out chan string) {
+	out <- DataSignerCrc32(data)
+}
+
+var MultiHash = func(in, out chan interface{}) {
+	wg := &sync.WaitGroup{}
+
+	for el := range in {
+		wg.Add(1)
+
+	}
+	wg.Wait()
+}
+
+var ProcessSingleHash = func(in, out chan interface{}, wg *sync.WaitGroup, mu sync.Mutex) {
+
+}
 
 var CombineResults = func(in, out chan interface{}) {
 	var data []string

@@ -23,14 +23,14 @@ var ExecutePipeline = func(jobs ...job) {
 		wg.Add(1)
 
 		out := make(chan interface{})
-		go BeforeJob(job, in, out, wg)
+		go BeforeJob(wg, job, in, out)
 
 		in = out
 	}
 	wg.Wait()
 }
 
-var BeforeJob = func(job job, in, out chan interface{}, wg *sync.WaitGroup) {
+var BeforeJob = func(wg *sync.WaitGroup, job job, in, out chan interface{}) {
 	job(in, out)
 	close(out)
 	wg.Done()
@@ -42,12 +42,12 @@ var SingleHash = func(in, out chan interface{}) {
 	mu := &sync.Mutex{}
 	for el := range in {
 		wg.Add(1)
-		go ProcessSingleHash(el, out, wg, mu)
+		go ProcessSingleHash(wg, mu, el, out)
 	}
 	wg.Wait()
 }
 
-var ProcessSingleHash = func(el interface{}, out chan interface{}, wg *sync.WaitGroup, mu *sync.Mutex) {
+var ProcessSingleHash = func(wg *sync.WaitGroup, mu *sync.Mutex, el interface{}, out chan interface{}) {
 	data := strconv.Itoa((el).(int))
 
 	dataChan := make(chan string)
@@ -73,13 +73,13 @@ var MultiHash = func(in, out chan interface{}) {
 
 	for el := range in {
 		wg.Add(1)
-		go ProcessMultiHash(el, out, wg)
+		go ProcessMultiHash(wg, el, out)
 
 	}
 	wg.Wait()
 }
 
-var ProcessMultiHash = func(el interface{}, out chan interface{}, wg *sync.WaitGroup) {
+var ProcessMultiHash = func(wg *sync.WaitGroup, el interface{}, out chan interface{}) {
 	InternalWg := &sync.WaitGroup{}
 	buf := make([]string, th)
 
@@ -105,5 +105,3 @@ var CombineResults = func(in, out chan interface{}) {
 
 	out <- strings.Join(data, combineResultSeparator)
 }
-
-func main() {}
